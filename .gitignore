@@ -7,7 +7,11 @@
 # Compiled Static libraries
 *.a
 
+# map file
+*.map
+
 # Executables
 *.out
 *.axf
 *.hex
+*.bin
