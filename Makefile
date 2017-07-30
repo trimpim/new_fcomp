@@ -4,6 +4,7 @@
 SRC_DIR = ./src
 DST_DIR = ./build
 BIN_NAME = fcomp
+EXT = cpp
 
 COLOR_NC='\e[0m' # No Color
 COLOR_WHITE='\e[1;37m'
@@ -28,9 +29,9 @@ COLOR_LIGHT_GRAY='\e[0;37m'
 #
 CC=/usr/bin/arm-none-eabi-c++
 LD = /usr/bin/arm-none-eabi-ld
-OBJCOPY = /usr/bin/arm-none-eabi-objcopy
 SIZE = /usr/bin/arm-none-eabi-size
 RM = rm -f
+MKDIR = mkdir
 
 #
 # compiler flags
@@ -63,31 +64,41 @@ LD_FLAGS += -l "stdc++"
 #
 # source and object files
 #
-SRC += $(wildcard $(SRC_DIR)/*.cpp)
-OBJ := $(wildcard $(DST_DIR)/*.o)
+SRC := $(shell find $(SRC_DIR) -name "*.${EXT}")
+OBJ := $(SRC:$(SRC_DIR)/%.${EXT}=$(DST_DIR)/%.o)
+DEP := $(OBJ:.o=.d)
 
 #
 # rules
 #
-all: compile link bin size
 
-compile: ${SRC}
-	@echo -e ${COLOR_GREEN}"Compiling : "${COLOR_WHITE} $<${COLOR_LIGHT_GRAY}
-	@$(CC) ${CXX_FLAGS} $< -o ${DST_DIR}/$(notdir $(basename $<)).o
+.PHONY: all clean
 
-link: compile
-	@echo -e "Linking : " ${DST_DIR}/${BIN_NAME}.axf
-	@$(LD) $(LD_FLAGS) ${OBJ} -o ${DST_DIR}/${BIN_NAME}.axf
-
-size: link
-	$(SIZE) ${DST_DIR}/${BIN_NAME}.axf
-
-bin: link
-	@echo -e "Converting : " ${DST_DIR}/${BIN_NAME}.axf  " -> " ${DST_DIR}/${BIN_NAME}.bin
-	@$(OBJCOPY) -v -O binary ${DST_DIR}/${BIN_NAME}.axf ${DST_DIR}/${BIN_NAME}.bin
+all: size
 
 clean:
-	$(RM) ${DST_DIR}/*.o
-	$(RM) ${DST_DIR}/*.axf
-	$(RM) ${DST_DIR}/*.bin
-	$(RM) ${DST_DIR}/*.map
+	@echo -e ${COLOR_GREEN}"Clean all"${COLOR_LIGHT_GRAY}
+	@$(RM) -rf ${DST_DIR}/*
+
+size: $(BIN_NAME).axf
+	@echo -e ${COLOR_GREEN}"binary size"${COLOR_LIGHT_GRAY}
+	@$(SIZE) ${DST_DIR}/$(BIN_NAME).axf
+
+$(BIN_NAME).axf: $(OBJ)
+	@echo -e ${COLOR_GREEN}"Linking : "\
+		${COLOR_WHITE}${DST_DIR}/${BIN_NAME}.axf\
+		${COLOR_LIGHT_GRAY}
+	@$(LD) $(LD_FLAGS) ${OBJ} -o ${DST_DIR}/${BIN_NAME}.axf
+
+.SECONDEXPANSION:
+$(DST_DIR)/%.o: $(SRC_DIR)/%.${EXT} | $$(@D)/
+	@echo -e ${COLOR_GREEN}"Compiling : "${COLOR_WHITE} $<\
+		${COLOR_LIGHT_GRAY}
+	@$(CC) $(CXX_FLAGS) -o $@ -c $<
+
+%/:
+	$(MKDIR) -p $*
+
+ifeq "$(MAKECMDGOALS)" ""
+-include $(DEP)
+endif

@@ -41,16 +41,11 @@ __attribute__((noinline))
 void setup() {
 
   // set pin directions for LED pins
-//  gGpioPort2.DIR = (1 << 4);
   gGpioPort2.DIR |= (1 << 4);
-//  gGpioPort2.DIR.set((1 << 5), (1 << 4));
-
-//  volatile auto c = gGpioPort2.DIR();
-//  gGpioPort2.DIR = c;
+  gGpioPort2.DIR |= (1 << 5);
 
   // clear all LEDs
-//  gGpios.p2()->CLR |= (1 << 4);
-//  gGpios.p2()->CLR |= (1 << 5);
+  gGpioPort2.CLR |= (1 << 4), (1 << 5);
 }
 
 
